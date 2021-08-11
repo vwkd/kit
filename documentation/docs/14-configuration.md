@@ -124,7 +124,7 @@ export default {
 
 ### hydrate
 
-Whether to [hydrate](#ssr-and-javascript-hydrate) the server-rendered HTML with a client-side app. (It's rare that you would set this to `false` on an app-wide basis.)
+Whether to [hydrate](#rendering-hydrate) the server-rendered HTML with a client-side app. (It's rare that you would set this to `false` on an app-wide basis.)
 
 ### package
 
@@ -144,7 +144,7 @@ An object containing zero or more of the following `string` values:
 
 ### prerender
 
-See [Prerendering](#ssr-and-javascript-prerender). An object containing zero or more of the following:
+See [Prerendering](#rendering-prerender). An object containing zero or more of the following:
 
 - `crawl` — determines whether SvelteKit should find pages to prerender by following links from the seed page(s)
 - `enabled` — set to `false` to disable prerendering altogether
@@ -176,7 +176,7 @@ See [Prerendering](#ssr-and-javascript-prerender). An object containing zero or 
 
 ### router
 
-Enables or disables the client-side [router](#ssr-and-javascript-router) app-wide.
+Enables or disables the client-side [router](#rendering-router) app-wide.
 
 ### serviceWorker
 
@@ -186,7 +186,7 @@ An object containing zero or more of the following values:
 
 ### ssr
 
-Enables or disables [server-side rendering](#ssr-and-javascript-ssr) app-wide.
+Enables or disables [server-side rendering](#rendering-ssr) app-wide.
 
 ### target
 

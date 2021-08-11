@@ -1,95 +1,14 @@
 ---
-title: Preloading
+title: Loading
 ---
 
-The `load` function
-[page](#routing-pages) and [layout](#layouts) components can export a `load` function from `<script context="module">` which runs right before the component is rendered.
+The `load` function runs before a component is rendered. It can be used to initialise the component by preloading data using `fetch` that is always ready when the component is rendered. It can be exported from the `<script context="module">` in [page](#routing-pages) and [layout](#layouts) components. Note child components imported by a page or layout compopnent don't have a `load` function.
 
-During SSR, all `fetch` responses are cached and baked into the rendered page. After hydration on the client, the client-side runtime takes the responses and injects it into `fetch` calls in the `load` function.
-
-When `fetch` runs on the server, the resulting response will be serialized and inlined into the rendered HTML. This allows the subsequent client-side `load` to access identical data immediately without an additional network request.
-
-- it has access to cookies on the server
-- it can make requests against the app's own endpoints
-
-This is why `load` receives a custom `fetch`.
-> You must use the `fetch` wrapper, otherwise `load` won't work as expected during SSR!
-
-
-it doesn't mean you're making unnecessary network requests.
-Anything you fetch in your load function is baked into the server-rendered HTML
-So the actual network request happens on the server. It just seems like it happens on the client.
-
-
-It runs both during SSR on the server and during CSR on the client. During SSR, all `fetch` responses are baked into the SSR rendered page. Then during CSR the client-side runtime serves.  can only be called through the load function.
-
-
-
-
-
-
-Note child components imported by a page or layout compopnent don't have a `load` function.
-
-Note if you instead load your data in a normal `<script>` then ???
-
-Code that is per-component instance should go into the normal `<script>` tag. 
-
-It can be used to already have the data ready when the component is created.
-
-
-
-This replaces fetching data on the client in the `onMount` function and showing a loading spinner.
-
-
-Load has access to a `fetch` in case you need to request data from external APIs.
-
-
-
-
-
-Code called inside `load` blocks:
-
-- should use the SvelteKit-provided [`fetch`](#loading-input-fetch) wrapper rather than using the native `fetch`
-- should not reference `window`, `document`, or any browser-specific objects
-- should not directly reference any API keys or secrets, which will be exposed to the client, but instead call an endpoint that uses any required secrets
-You shouldn't be talking directly to the database in load, you should be creating an endpoint and requesting data with fetch.
-
-
-
-///
-
-An endpoint is a private API that is only available to your pages. Endpoints are the place to do things like access databases or APIs that require private credentials or return data that lives on a machine in your production network.
-
-An endpoint doesn't exist as a resource at the URL on the WWW. Its responses are precomputed during SSR along with the pages themselves. The runtime on the client then emulates the responses to your pages as if they were resources that actually existed at a URL.
-
-You can think of an endpoint as a page with a `load` function that gets SSR but never ends up on the client.
-
-What actually happens during SSR is the SvelteKit compiler calls the endpoint function for every `fetch` call in a page and stores the results in the generated page that will be served to the client. After hydration on the client, the client-side runtime intercepts `fetch` requests of the pages to the endpoint and returns the precomputed results. There is no actual HTTP call going on.
-
-??? can fetch only in `load` or also in normal `script`?
-
-Endpoints return JSON by default, though may also return data in other formats.
-
-??? What happens if SSR is off?
-
-Endpoints are modules with a `.js` or `.ts` extension and filenames similar to pages. A module exports functions corresponding to HTTP methods, like `get` for `GET` requests and `post` for `POST` requests. Since `delete` is a reserved word in JavaScript, DELETE requests are handled with a `del` function. 
-
-Endpoints return JSON by default, though may also return data in other formats.
-
-Endpoints has access to a `fetch` in case you need to request data from external APIs.
-??? HOW `this.fetch` or through argument like in `load` ?
-
-/////
-
-
-
-If `load` returns nothing, SvelteKit will [fall through](#routing-advanced-fallthrough-routes) to other routes until it finds a `load` function that responds. If no route responds it will respond with a generic 404.
-
-Our example blog page might contain a `load` function like the following. Note the actual `fetch` request takes place on the server.
+Our example blog page `/src/blog/[slug].svelte` might contain a `load` function that fetches from our endpoint (or any API).
 
 ```html
 <script context="module">
-	export async function load({ page, fetch, session, context }) {
+	export async function load({ page, fetch }) {
 		const url = `/blog/${page.params.slug}.json`;
 		const res = await fetch(url);
 
@@ -109,10 +28,37 @@ Our example blog page might contain a `load` function like the following. Note t
 </script>
 ```
 
+You might wonder why we use a `fetch` function in the argument. The `fetch` function is a custom wrapper around the native `fetch` Web API that allows us to do some magical things. There is actually a lot going on here.
+
+The `load` function runs both on the server (during SSR) and on the client (during CSR). During SSR the responses to any `fetch` requests in `load` are saved within the generated page. After hydration on the client, the client-side runtime returns the saved responses to the `fetch` requests in the `load` function when it runs. On the client there is no network request. The only actual network request is on the server. To the component it only looks like it happens on the client.
+
+This also explains why when rendering the component on the client the data is always ready, no matter how long the fetch takes. This is because there is no fetch. The data is already there on the client because the fetch took place on the server earlier. To the client the response is always instant, even if the API is slow since the waiting is done on the server. And even better for prerendered pages since the waiting is done during build-time. The amount of fetch requests doesn't matter either since they are all included in the same generated page.
+
+Make sure you don't fetch APIs using secrets from `load`, since the code is transferred to the client. Instead fetch from [endpoints](#routing-endpoints), which then fetch from those APIs using the secrets during SSR.
+
+The `load` function is the preferable way to fetch data. The `onMount` function in a normal `<script>` runs only on the client meaning the client has to wait for the network.
+
+If we used the normal `fetch` instead of the custom wrapper, then the client makes an ordinary request to the network just as in the `onMount` function. The server makes of course also a request, but the response isn't used. Also fetching endpoints on the client would fail, since endpoints don't exist on the client.
+
+> Make sure to use the custom `fetch` wrapper.
+
+
+
+> Since the `load` function runs on also on the server, make sure it doesn't use any browser-specific objects like `window` or `document`.
+
+
+
+If `load` returns nothing, SvelteKit will [fall through](#routing-advanced-fallthrough-routes) to other routes until it finds a `load` function that responds. If no route responds it will respond with a generic 404.
+
+
+
+
 It is recommended that you not store pre-request state in global variables, but instead use them only for cross-cutting concerns such as caching and holding database connections.
 
 > Mutating any shared state on the server will affect all clients, not just the current one.
 
+
+??? What happens if SSR is off?
 
 
 ### Input
@@ -136,10 +82,7 @@ So if the example above was `src/routes/blog/[slug].svelte` and the URL was `htt
 
 `fetch` is a wrapper around the native `fetch` web API, and can make credentialed requests. It can be used across both client and server contexts.
 
-
 > Cookies will only be passed through if the target host is the same as the SvelteKit application or a more specific subdomain of it.
-
-
 
 #### session
 

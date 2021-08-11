@@ -45,15 +45,9 @@ A file or directory can have multiple dynamic parts, like `[id]-[category].svelt
 
 ### Endpoints
 
-An endpoint is a private API that is only available to your pages. Endpoints are the place to do things like access databases or APIs that require private credentials or return data that lives on a machine in your production network.
+An endpoint is an API that runs only during SSR on the server. It can be accessed from a page using the [`load`](#loading) function and the custom `fetch` wrapper. Endpoints are the place to do things like access databases or APIs that require private credentials or return data that lives on a machine in your production network.
 
-An endpoint doesn't exist as a resource at the URL on the WWW. Its responses are precomputed during SSR along with the pages themselves. The runtime on the client then emulates the responses to your pages as if they were resources that actually existed at a URL.
-
-You can think of an endpoint as a page with a `load` function that gets SSR but never ends up on the client.
-
-What actually happens during SSR is the SvelteKit compiler calls the endpoint function for every `fetch` call in a page and stores the results in the generated page that will be served to the client. After hydration on the client, the client-side runtime intercepts `fetch` requests of the pages to the endpoint and returns the precomputed results. There is no actual HTTP call going on.
-
-??? can fetch only in `load` or also in normal `script`?
+An endpoint doesn't exist as a resource at a URL on the network. During SSR its response is saved into the generated page. The runtime on the client then emulates the response to the page as if the resource actually existed at the URL. For more details, see [`load`](#loading) function.
 
 Endpoints return JSON by default, though may also return data in other formats.
 
@@ -62,9 +56,6 @@ Endpoints return JSON by default, though may also return data in other formats.
 Endpoints are modules with a `.js` or `.ts` extension and filenames similar to pages. A module exports functions corresponding to HTTP methods, like `get` for `GET` requests and `post` for `POST` requests. Since `delete` is a reserved word in JavaScript, DELETE requests are handled with a `del` function. 
 
 Endpoints return JSON by default, though may also return data in other formats.
-
-Endpoints has access to a `fetch` in case you need to request data from external APIs.
-??? HOW `this.fetch` or through argument like in `load` ?
 
 For example, we might have an endpoint `src/routes/blog/[slug].json.js` that returns a blog post as JSON from our database. Then a hypothetical blog page like `/blog/cool-article` would request data from `/blog/cool-article.json`, which would call the endpoint with the slug `cool-article`.
 
@@ -90,6 +81,8 @@ export async function get({ params }) {
 ```
 
 Note we don't interact with the `req` and `res` objects you might be familiar with from Node's `http` module or frameworks like Express, because they're only available on certain platforms. SvelteKit uses its own API such that it can adapt to any platform using [adapters](#adapters).
+
+Note that a global `fetch` available that can be used to fetch data from external APIs irrespective of the platform.
 
 #### Response
 

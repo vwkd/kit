@@ -6,11 +6,15 @@ There are two types of routes: **pages** and **endpoints**.
 
 ### Pages
 
-Pages typically generate HTML to display to the user (as well as any CSS and JavaScript needed for the page). By default, pages are rendered on both the client and server, though this behaviour is [configurable](#rendering).
+A page is a view in your app. After SSR it is a HTML file (and its CSS and JavaScript dependencies) with an URL on your server.
 
-Pages are Svelte components with a `.svelte.` extension in the `src/routes` directory of your project. You can customise the extension in [`config.extensions`](#configuration) and the directory in [project config](#configuration).
+??? During CSR it generates JSON.
 
-SvelteKit uses a _filesystem-based router_. This means that the structure of your application is defined by the structure of your codebase — specifically, the contents of `src/routes`. The filename determines the route.
+By default, pages are rendered on both the client and server, though this behaviour is [configurable](#rendering).
+
+Pages are Svelte components with a `.svelte.` extension in the `src/routes` directory of your project. You can customise the extension and the directory in the [config](#configuration).
+
+The filename of a page determines the route. This means that the structure of your application is defined by the structure of your codebase — specifically, the contents of `src/routes`.
 
 For example, `src/routes/index.svelte` is the root of your site:
 
@@ -35,19 +39,32 @@ A file called either `src/routes/about.svelte` or `src/routes/about/index.svelte
 <p>TODO...</p>
 ```
 
-Dynamic parameters are encoded using `[brackets]`. For example, a blog post might be defined by `src/routes/blog/[slug].svelte`. Soon, we'll see how to access that parameter in a [load function](#loading) or the [page store](#modules-$app-stores).
+Dynamic parameters are encoded using `[brackets]`. For example, a blog post might be defined by `src/routes/blog/[slug].svelte`. Soon, we'll see how to use that parameter in a [load function](#loading) or the [page store](#modules-$app-stores).
 
-A file or directory can have multiple dynamic parts, like `[id]-[category].svelte`. (Parameters are 'non-greedy'; in an ambiguous case like `x-y-z`, `id` would be `x` and `category` would be `y-z`.)
+A file or directory can have multiple dynamic parts, like `[id]-[category].svelte`. Parameters are 'non-greedy'. In an ambiguous case like `x-y-z`, `id` would be `x` and `category` would be `y-z`.
 
 ### Endpoints
 
-Endpoints run only on the server at request-time or at build-time if [prerendering](#rendering-prerender). This means it's the place to do things like access databases or APIs that require private credentials or return data that lives on a machine in your production network. Pages can request data from endpoints. Endpoints return JSON by default, though may also return data in other formats.
+An endpoint is a private API that is only available to your pages. Endpoints are the place to do things like access databases or APIs that require private credentials or return data that lives on a machine in your production network.
 
-Endpoints are modules written in `.js` (or `.ts`) files that export functions corresponding to HTTP methods, like `get` for `GET` requests and `post` for `POST` requests. Since `delete` is a reserved word in JavaScript, DELETE requests are handled with a `del` function. These functions return
+An endpoint doesn't exist as a resource at the URL on the WWW. Its responses are precomputed during SSR along with the pages themselves. The runtime on the client then emulates the responses to your pages as if they were resources that actually existed at a URL. 
 
-???? All server-side code, including endpoints, has access to `fetch` in case you need to request data from external APIs. ??? WHAT IS OTHER SS CODE EXCLUDING ENDPOINTS?
+What actually happens during SSR is the SvelteKit compiler calls the endpoint function for every `fetch` call in a page and stores the results in the generated page that will be served to the client. After hydration on the client, the client-side runtime intercepts `fetch` requests of the pages to the endpoint and returns the precomputed results. There is no actual HTTP call going on.
 
-For example, we might have an endpoint `src/routes/blog/[slug].json.js` that returns a blog post as JSON. Then a hypothetical blog page like `/blog/cool-article` would request data from `/blog/cool-article.json`, which calls the endpoint with the slug `cool-article`
+??? can fetch only in `load` or also in normal `script`?
+
+Endpoints return JSON by default, though may also return data in other formats.
+
+??? What happens if SSR is off?
+
+Endpoints are modules with a `.js` or `.ts` extension and filenames similar to pages. A module exports functions corresponding to HTTP methods, like `get` for `GET` requests and `post` for `POST` requests. Since `delete` is a reserved word in JavaScript, DELETE requests are handled with a `del` function. 
+
+Endpoints return JSON by default, though may also return data in other formats.
+
+All server-side code, including endpoints, has access to `fetch` in case you need to request data from external APIs.
+??? WHAT IS OTHER SS CODE EXCLUDING ENDPOINTS?
+
+For example, we might have an endpoint `src/routes/blog/[slug].json.js` that returns a blog post as JSON from our database. Then a hypothetical blog page like `/blog/cool-article` would request data from `/blog/cool-article.json`, which would call the endpoint with the slug `cool-article`.
 
 ```js
 // Don't worry about `$lib`, we'll get to that [later](#modules-$lib).

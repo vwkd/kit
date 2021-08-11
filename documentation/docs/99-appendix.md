@@ -26,7 +26,7 @@ Prerendering is more performant and efficient than Dynamic SSR, since it scales 
 
 As a tradeoff, prerendering allows for less frequent updates to the page and also requires more storage.
 
-Prerendered pages don't personalise the contents of the page on the server for different requests but can use JavaScript on the client. The rule of thumb is: for content to be prerenderable, any two requests must get the same content. Note that you can still prerender content if it is personalised using the data contained in the request itself like the parameters in the query string of the URL.
+Prerendered pages can't personalise the response depending on the request. If you want to personalise the contents of the page, you can either use a prerendered page with JavaScript personalising the contents on the client-side, or use dynamic SSR instead.
 
 ### Client-side rendering (CSR)
 

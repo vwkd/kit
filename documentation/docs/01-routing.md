@@ -70,11 +70,11 @@ export async function get({ params }) {
 }
 ```
 
+Note we don't interact with the `req` and `res` objects you might be familiar with from Node's `http` module or frameworks like Express, because they're only available on certain platforms. SvelteKit uses its own API such that it can adapt to any platform using [adapters](#adapters).
+
 #### Response
 
 The job of an endpoint function is to return a `{ status, headers, body }` object representing the response.
-
-We don't interact with the `req`/`res` objects you might be familiar with from Node's `http` module or frameworks like Express, because they're only available on certain platforms. Instead, SvelteKit translates the returned object into whatever's required by the platform you're deploying your app to.
 
 The property `status` is an [HTTP status code](https://httpstatusdogs.com) which defaults to `200`. Returning nothing is equivalent to an explicit 404 response.
 

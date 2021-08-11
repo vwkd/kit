@@ -2,6 +2,8 @@
 title: Appendix
 --- 
 
+This is a glossary of common terms used.
+
 ### Server-side rendering (SSR)
 
 Server-side rendering (SSR) is the generation of the page contents on the server. The content is contained in the HTML as markup and to show the page the browser can build the DOM directly from the markup. This is how all web pages worked initially. Don't get confused, the page can still contain JavaScript, and therefore personalise the contents on the client-side. This is called hydration.

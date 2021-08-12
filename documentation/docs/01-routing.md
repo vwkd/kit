@@ -6,7 +6,7 @@ There are two types of routes: **pages** and **endpoints**.
 
 ### Pages
 
-Pages are rendered on both the client and server by default. During SSR a page generates a HTML file as well as any CSS and JavaScript dependencies. Your hosting provider makes these files available at a URL for your clients to reach. On the client, the page is hydrated and rendered again. You can configure this in [config](#rendering).
+Pages are rendered on both the client and server by default. During SSR a page generates a HTML file as well as any CSS and JavaScript dependencies. When deployed these files will end up at URLs on the WWW for your clients to reach. On the client, the page is hydrated and CSR.
 
 ??? During CSR it generates JSON.
 
@@ -22,7 +22,7 @@ For example, `src/routes/index.svelte` is the root of your site:
 	<title>Welcome</title>
 </svelte:head>
 
-<h1>Hello and welcome to my site!</h1>
+<h1>Hello world!</h1>
 ```
 
 A file called either `src/routes/about.svelte` or `src/routes/about/index.svelte` would correspond to the `/about` route:
@@ -37,17 +37,17 @@ A file called either `src/routes/about.svelte` or `src/routes/about/index.svelte
 <p>TODO...</p>
 ```
 
-Dynamic parameters are encoded using `[brackets]`. For example, a blog post might be defined by `src/routes/blog/[slug].svelte`. Soon, we'll see how to use that parameter in a [load function](#loading) or the [page store](#modules-$app-stores).
+Dynamic parameters are encoded using `[brackets]`. For example, a blog post might be defined by `src/routes/blog/[slug].svelte`. Soon, we'll see how to use that parameter in a [`load` function](#loading) or the [page store](#modules-$app-stores).
 
 A file or directory can have multiple dynamic parts, like `[id]-[category].svelte`. Parameters are 'non-greedy'. In an ambiguous case like `x-y-z`, `id` would be `x` and `category` would be `y-z`.
 
 ### Endpoints
 
-Endpoints run only during SSR on the server. An endpoint doesn't exist as a resource at a URL on the network. It can be accessed from a page using the custom `fetch` wrapper in the [`load`](#loading) function.
+Endpoints can be accessed from a page using the custom `fetch` wrapper in the [`load`](#loading) function. Endpoints run only during SSR on the server. An endpoint isn't deployed to a URL on the WWW.
 
-Endpoints are used to provide data from APIs that require private credentials or data on the server itself like databases.
+Endpoints can be used to provide data from APIs that require private credentials or data on the server itself like databases.
 
-During SSR the response to a fetch to an endpoint from the `load` function in a page is saved into the generated page. The runtime on the client then emulates the response to the page as if the resource actually existed at the URL. For more details, see [`load`](#loading) function.
+During SSR the response to a fetch from the endpoint is saved into the generated page. The runtime on the client then emulates the response to the page as if the resource actually existed at the URL on the WWW. For more details, see [`load`](#loading) function.
 
 Endpoints return JSON by default, though may also return data in other formats.
 

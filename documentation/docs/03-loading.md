@@ -36,24 +36,19 @@ The `load` function runs both on the server during SSR and on the client during 
 
 This also explains why when rendering the component on the client the data is always ready, no matter how long the fetch takes. This is because there is no fetch. The data is already there on the client because the fetch took place on the server earlier. To the client the response is always instant, even if the API is slow since the waiting is done on the server. And even better for prerendered pages since the waiting is done during build-time. The amount of fetch requests doesn't matter either since they are all included in the same generated page.
 
-Make sure you don't fetch APIs using secrets directly from `load`, since the code is transferred to the client. Instead use [endpoints](#routing-endpoints).
+??? During dynamic SSR, `fetch` on the server has access to cookies. This isn't applicable with prerendering.
 
-The `load` function is the preferable way to fetch data. The `onMount` function runs only on the client meaning the client has to wait for the network.
+> Make sure you don't fetch APIs using secrets directly from `load`, since the code is transferred to the client. Instead use [endpoints](#routing-endpoints).
 
-> Make sure to use the custom `fetch` wrapper instead of the global `fetch`. Otherwise the client makes an ordinary request to the network and fails when fetching endpoints since they don't exist on the client. This would make `load` behave like `onMount`.
+The `load` function is the preferable way to fetch data since the `onMount` function runs only on the client meaning the client has to wait for the network.
+
+> Make sure to use the custom `fetch` wrapper instead of the global `fetch`. Otherwise `fetch` makes a normal request to the network on the client similarly to `onMount` meaning the client has to wait for the network. Also the client fails fetching endpoints since they don't exist on the client.
 
 > Since the `load` function runs on also on the server, make sure it doesn't use any browser-specific objects like `window` or `document`.
 
 It is recommended that you not store pre-request state in global variables, but instead use them only for cross-cutting concerns such as caching and holding database connections.
 
 > Mutating any shared state on the server will affect all clients, not just the current one.
-
-
-
-
-
-
-
 
 
 ??? What happens if SSR is off?

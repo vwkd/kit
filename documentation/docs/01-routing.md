@@ -6,11 +6,9 @@ There are two types of routes: **pages** and **endpoints**.
 
 ### Pages
 
-A page is a view in your app. After SSR it is a HTML file (and its CSS and JavaScript dependencies) with an URL on your server.
+Pages are rendered on both the client and server by default. During SSR a page generates a HTML file as well as any CSS and JavaScript dependencies. Your hosting provider makes these files available at a URL for your clients to reach. On the client, the page is hydrated and rendered again. You can configure this in [config](#rendering).
 
 ??? During CSR it generates JSON.
-
-By default, pages are rendered on both the client and server, though this behaviour is [configurable](#rendering).
 
 Pages are Svelte components with a `.svelte.` extension in the `src/routes` directory of your project. You can customise the extension and the directory in the [config](#configuration).
 
@@ -45,9 +43,11 @@ A file or directory can have multiple dynamic parts, like `[id]-[category].svelt
 
 ### Endpoints
 
-An endpoint is an API that runs only during SSR on the server. It can be accessed from a page using the [`load`](#loading) function and the custom `fetch` wrapper. Endpoints are the place to do things like access databases or APIs that require private credentials or return data that lives on a machine in your production network.
+Endpoints run only during SSR on the server. An endpoint doesn't exist as a resource at a URL on the network. It can be accessed from a page using the custom `fetch` wrapper in the [`load`](#loading) function.
 
-An endpoint doesn't exist as a resource at a URL on the network. During SSR its response is saved into the generated page. The runtime on the client then emulates the response to the page as if the resource actually existed at the URL. For more details, see [`load`](#loading) function.
+Endpoints are used to provide data from APIs that require private credentials or data on the server itself like databases.
+
+During SSR the response to a fetch to an endpoint from the `load` function in a page is saved into the generated page. The runtime on the client then emulates the response to the page as if the resource actually existed at the URL. For more details, see [`load`](#loading) function.
 
 Endpoints return JSON by default, though may also return data in other formats.
 
@@ -57,10 +57,9 @@ Endpoints are modules with a `.js` or `.ts` extension and filenames similar to p
 
 Endpoints return JSON by default, though may also return data in other formats.
 
-For example, we might have an endpoint `src/routes/blog/[slug].json.js` that returns a blog post as JSON from our database. Then a hypothetical blog page like `/blog/cool-article` would request data from `/blog/cool-article.json`, which would call the endpoint with the slug `cool-article`.
+For example, we might have a hypothetical database with blog posts on our server at `$lib/database`. Don't worry about `$lib`, we'll get to that [later](#modules-$lib). We use the endpoint `src/routes/blog/[slug].json.js` to get a blog post from our database. Then a hypothetical blog page like `/blog/cool-article` would request data from `/blog/cool-article.json`, which would call the endpoint with the slug `cool-article` and search in the database for a corresponding blog post.
 
 ```js
-// Don't worry about `$lib`, we'll get to that [later](#modules-$lib).
 import db from '$lib/database';
 
 export async function get({ params }) {
@@ -82,7 +81,7 @@ export async function get({ params }) {
 
 Note we don't interact with the `req` and `res` objects you might be familiar with from Node's `http` module or frameworks like Express, because they're only available on certain platforms. SvelteKit uses its own API such that it can adapt to any platform using [adapters](#adapters).
 
-Note that a global `fetch` available that can be used to fetch data from external APIs irrespective of the platform.
+Note that in endpoints a global `fetch` is available that can be used to fetch data from external APIs irrespective of the platform.
 
 #### Response
 

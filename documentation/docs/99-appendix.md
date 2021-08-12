@@ -6,9 +6,9 @@ This is a glossary of common terms used.
 
 ### Server-side rendering (SSR)
 
-Server-side rendering (SSR) is the generation of the page contents on the server. The content is contained in the HTML as markup and to show the page the browser can build the DOM directly from the markup. This is how all web pages worked initially. Don't get confused, the page can still contain JavaScript, and therefore personalise the contents on the client-side. This is called hydration.
+Server-side rendering (SSR) is the generation of the page contents on the server. The content is contained in the HTML as markup and to show the page the browser can build the DOM directly from the markup. This is how all web pages worked initially. Don't get confused, the page can still contain JavaScript, and therefore personalise the contents on the client-side.
 
-For the initial page load, SSR improves performance since it can show content faster. Also it makes the page accessible to users without JavaScript, which can fail or be disabled [more often than you might think](https://kryogenix.org/code/browser/everyonehasjs.html). Also SSR is generally preferred for SEO. While some search engines can index content that is dynamically generated on the client-side (see CSR) it may take longer even in these cases. SSR is the preferred way for serving the initial page.
+For the initial page load, SSR improves performance since it can show content faster. Also it makes the page accessible to users without JavaScript, which can fail or be disabled [more often than you might think](https://kryogenix.org/code/browser/everyonehasjs.html). Because of this SSR is generally preferred for SEO. While some search engines can index content that is dynamically generated on the client-side (see CSR) it may take longer even in these cases.
 
 #### Dynamic SSR
 
@@ -36,16 +36,20 @@ For the initial page load, CSR is slower than SSR because of the additional size
 
 ### Routing
 
-Routing is the navigation to a new page of the same website on the client.
+Routing is the navigation of the client to a new page (of the same website).
 
-Server-side routing uses the built-in browser navigation. The browser loads the new page as initial page, the same as if the previous page had never been there. No state is preserved and the DOM is built again from scratch. This is how navigation clasically works in SSR pages. The advantage of this is that it works out of the box. A user interaction with the navigation elements like the anchor element or the forward and back buttons, the history, the accessibility like moving focus back the top and reading the new title.
+Server-side routing uses the built-in browser navigation. The browser loads the new page as initial page, as if the previous page had never been there. No state is preserved and the DOM is built again from scratch. This is how navigation clasically works in SSR pages. The drawback is, that this is slow and inefficient. The advantage is that it doesn't require JavaScript and works out of the box. This isn't only important for the built-in navigation elements like the anchor element or the forward and back buttons and the history, but also accessibility like moving focus back to the top of the page or reading the new title.
 
 Client-side routing uses JavaScript for navigation. JavaScript loads the new contents and modifies the DOM of the existing page. To the browser it seems like there is only ever the single initial page. JavaScript just manipulates that single page to make it look like distinct pages.
 
-For subsequent navigation, this is more efficient since it only needs to load the changed contents without the page boilerplate. It can also preserve state, intelligently prefetch pages in advance, and animate page transitions. The navigation can be initiated by JavaScript, or by the user interacting with the built-in browser navigation elements which JavaScript needs to intercept. JavaScript also needs to change the URL in the browser bar, update the browser history, and preserve accessibility. Client-side routing requires CSR and therefore both are almost always used together.
+For subsequent navigation, this is more efficient since it only needs to load the changed contents without the page boilerplate. It can also preserve state, prefetch pages in advance, and animate page transitions. The navigation can be initiated by JavaScript, or by the user interacting with the built-in browser navigation elements which JavaScript needs to intercept. JavaScript also needs to change the URL in the browser bar, update the browser history, and preserve accessibility. Client-side routing requires CSR and therefore CSR is almost always used together with client-side routing.
 
 ### SPA
 
 A Single-Page App (SPA) is a web site that uses client-side routing without SSR the initial page. Initially, frameworks didn't include support for SSR but nowadays most frameworks have good support for SSR.
 
 There are certain cases in which a SPA still makes sense where the tradeoff of simplicity against performance and efficiency is worth it, like a complex business application behind a login where SEO isn't important and users are accessing the application from a consistent computing environment.
+
+### Hydration
+
+Hydration is the process of making a server-side rendered version of a page interactive. The client-side runtime attaches event listeners, (if client-side routing) initialises the client-side router, and uses CSR to update the page for any state change.

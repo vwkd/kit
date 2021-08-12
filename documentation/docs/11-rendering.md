@@ -22,16 +22,17 @@ To disable SSR app-wide you can use the [`ssr` config option](#configuration-ssr
 
 ### prerender
 
-Your [adapter](#adapters) determines which pages are [prerendered](#appendix-prerendering). The [`adapter-static`](https://github.com/sveltejs/kit/tree/master/packages/adapter-static) adapter prerenders all pages by default.
-??? Other adapters prerender no pages by default.
+Your [adapter](#adapters) determines if pages are by default [prerendered](#appendix-prerendering) or dynamically server-side rendered. Currently, only [`adapter-static`](https://github.com/sveltejs/kit/tree/master/packages/adapter-static) prerenders pages by default, while all others adapters default to dynamic SSR.
 
-If you only want to prerender specific pages in your app, you need to annotate these pages:
+You can enable/disable [prerendering](#appendix-prerendering) on the page-level using the `prerender` export:
 
 ```html
 <script context="module">
 	export const prerender = true;
 </script>
 ```
+
+To enable/disable prerendering app-wide you can use the [`prerender.enabled` config option](#configuration-ssr).
 
 The prerenderer will crawl your app starting from the root and following all `<a>` elements that point to other pages of the same app. Therefore you generally don't need to specify which pages should be accessed by the prerenderer. If you _do_ have pages which aren't linked to, you can specify them in the `pages` option in the [prerender configuration](#configuration-prerender).
 

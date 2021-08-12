@@ -34,15 +34,17 @@ You might wonder why we use a `fetch` function in the argument. The `fetch` func
 
 The `load` function runs both on the server during SSR and on the client during CSR. During SSR the responses to any `fetch` requests in `load` are saved in the generated page. After hydration on the client, the client-side runtime returns the saved responses to the `fetch` requests in the `load` function when it runs. On the client there is no network request. The only actual network request is on the server. To the component it only looks like the request happens on the client.
 
-This also explains why when rendering the component on the client the data is always ready, no matter how long the fetch takes. This is because there is no fetch. The data is already there on the client because the fetch took place on the server earlier. To the client the response is always instant, even if the API is slow since the waiting is done on the server. And even better for prerendered pages since the waiting is done during build-time. The amount of fetch requests doesn't matter either since they are all included in the same generated page.
+When rendering the component on the client the data is always ready, no matter how long the fetch takes. This is because there is no fetch. The data is already there on the client because the fetch took place on the server earlier. To the client the response is always instant, even if the API is slow since the waiting is done on the server. And even better for prerendered pages since the waiting is done during build-time. The amount of fetch requests doesn't matter either since they are all included in the same generated page.
 
 ??? During dynamic SSR, `fetch` on the server has access to cookies. This isn't applicable with prerendering.
 
-> Make sure you don't fetch APIs using secrets directly from `load`, since the code is transferred to the client. Instead use [endpoints](#routing-endpoints).
+The `load` function and the custom `fetch` also allow to use endpoints that only exist on the server.
+
+> Don't use `load` directly to fetch data from APIs using private credentials or data on the server itself, since the code is leaked to the client. Instead use [endpoints](#routing-endpoints).
 
 The `load` function is the preferable way to fetch data since the `onMount` function runs only on the client meaning the client has to wait for the network.
 
-> Make sure to use the custom `fetch` wrapper instead of the global `fetch`. Otherwise `fetch` makes a normal request to the network on the client similarly to `onMount` meaning the client has to wait for the network. Also the client fails fetching endpoints since they don't exist on the client.
+> Make sure to use the custom `fetch` wrapper instead of the global `fetch`. Otherwise fetching from endpoints will fail on the client, because they don't exist at a URL on the WWW. Also `fetch` would make a network request on the client, which the client had to wait for, just like in `onMount`. Of course, the request would also be sent on the server, and the response would be discarded without using it.
 
 > Since the `load` function runs on also on the server, make sure it doesn't use any browser-specific objects like `window` or `document`.
 

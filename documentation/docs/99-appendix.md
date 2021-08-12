@@ -26,7 +26,7 @@ Prerendering is more performant and efficient than Dynamic SSR, since it scales 
 
 As a tradeoff, prerendering allows for less frequent updates to the page and also requires more storage.
 
-Prerendered pages can't personalise the response depending on the request. If you want to personalise the contents of the page, you can either use a prerendered page with JavaScript personalising the contents on the client-side, or use dynamic SSR instead.
+Prerendered pages can't personalise the response depending on the request, for example involving session or authentication. If you want to personalise the contents of the page, you can either use a prerendered page with JavaScript personalising the contents on the client-side, or use dynamic SSR instead.
 
 ### Client-side rendering (CSR)
 

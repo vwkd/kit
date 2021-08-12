@@ -34,7 +34,7 @@ You can enable/disable [prerendering](#appendix-prerendering) on the page-level 
 
 To enable/disable prerendering app-wide you can use the [`prerender.enabled` config option](#configuration-ssr).
 
-The prerenderer will crawl your app starting from the root and following all `<a>` elements that point to other pages of the same app. Therefore you generally don't need to specify which pages should be accessed by the prerenderer. If you _do_ have pages which aren't linked to, you can specify them in the `pages` option in the [prerender configuration](#configuration-prerender).
+The prerenderer will crawl your app starting from the root and following all `<a>` elements that point to other pages of the same app. Therefore any pages you want to be included in the exported site must either be reachable by `<a>` elements or added to the [config.kit.prerender.pages configuration](#configuration-prerender).
 
 A prerendered page will generate a HTML file, plus any additional files requested by the `load` function. Note that you can still prerender pages that load data based on the page's parameters, like our `src/routes/blog/[slug].svelte` example from earlier, since the prerenderer will intercept requests made inside `load`, so the data served from `src/routes/blog/[slug].json.js` will also be captured.
 

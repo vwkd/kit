@@ -10,15 +10,52 @@ title: Introduction
 
 ### What is SvelteKit?
 
-SvelteKit is a framework for building extremely high-performance web apps. You're looking at one right now! There are two basic concepts:
+SvelteKit is an application framework for building web apps using [Svelte](https://svelte.dev/) components.
 
-- Each page of your app is a [Svelte](https://svelte.dev) component
-- You create pages by adding files to the `src/routes` directory of your project. These will be server-rendered so that a user's first visit to your app is as fast as possible, then a client-side app takes over
+With SvelteKit you can build modern state-of-the-art web apps that fully embrace the serverless paradigm with a lightning-fast development experience.
 
-Building an app with all the modern best practices — code-splitting, [offline support](#service-workers), [server-rendered views](#appendix-ssr) with [client-side hydration](#appendix-hydration) — is fiendishly complicated. SvelteKit does all the boring stuff for you so that you can get on with the creative part.
+Building an app with all the modern best practices — [server-side rendering](#appendix-ssr) with [client-side hydration](#appendix-hydration), code-splitting, [offline support](#service-workers) — is fiendishly complicated. SvelteKit does all the boring stuff for you so that you can get on with the creative part.
 
-You don't need to know Svelte to understand the rest of this guide, but it will help. In short, it's a UI framework that compiles your components to highly optimized vanilla JavaScript. Read the [introductory blog post](https://svelte.dev/blog/svelte-3-rethinking-reactivity) and the [tutorial](https://svelte.dev/tutorial) to learn more.
+If you're unfamiliar with Svelte check out the [introductory blog post](https://svelte.dev/blog/svelte-3-rethinking-reactivity) and the [tutorial](https://svelte.dev/tutorial) to learn more.
 
+### Features
+
+- [server-side rendering](#appendix-ssr)
+    
+    The initial page of your app is as fast as possible by serving a server-side rendered version of the page.
+  
+- [prerendering](#appendix-prerendering) or dynamic server-side rendering
+
+    Server-side rendered pages can be generated at build-time or at request-time.
+
+- [client-side routing](#appendix-routing)
+
+    Subsequent pages are client-side rendered for a fast, app-like feel where the common portions of the pages do not need to be rerendered.
+
+- [highly configurable](#ssr-and-javascript)
+
+    Configurable rendering on a per-page or per-app level.
+
+- code-splitting for JS and CSS
+
+    Code-splitting so that your app only loads the code needed for each page.
+
+- prefetching
+
+    Prefetching pages before the user initiates navigation.
+
+- [service workers](#service-workers)
+
+    Service workers to make your app work offline or speed up navigation by caching.
+
+- hot module reloading
+
+    A [Vite](https://vitejs.dev/) development server with built-in hot module reloading and error overlays so that your updates are instantly visible without reloading the page.
+
+- TypeScript
+
+    Built-in TypeScript support.
+    
 ### Getting started
 
 The easiest way to start building a SvelteKit app is to run `npm init`:

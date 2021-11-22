@@ -2,48 +2,15 @@
 title: Loading
 ---
 
-A component that defines a page or a layout can export a `load` function that runs before the component is created. This function runs both during server-side rendering and in the client, and allows you to get data for a page without (for example) showing a loading spinner and fetching data in `onMount`.
+The `load` function in a component runs before the component is rendered. It can be used to initialise the component by preloading data using `fetch` that is always ready when the component is rendered.
 
-```ts
-// load TypeScript type definitions
+It can be exported from the `<script context="module">` in [page](#routing-pages) and [layout](#layouts) components. Note child components imported by a page or layout compopnent don't have a `load` function.
 
-type LoadInput<
-	PageParams extends Record<string, string> = Record<string, string>,
-	Context extends Record<string, any> = Record<string, any>,
-	Session = any
-> = {
-	page: {
-		host: string;
-		path: string;
-		params: PageParams;
-		query: URLSearchParams;
-	};
-	fetch: (info: RequestInfo, init?: RequestInit) => Promise<Response>;
-	session: Session;
-	context: Context;
-};
-
-type LoadOutput<
-	Props extends Record<string, any> = Record<string, any>,
-	Context extends Record<string, any> = Record<string, any>
-> = {
-	status?: number;
-	error?: string | Error;
-	redirect?: string;
-	props?: Props;
-	context?: Context;
-	maxage?: number;
-};
-```
-
-Our example blog page might contain a `load` function like the following:
+Our example blog page `/src/blog/[slug].svelte` might contain a `load` function that fetches from our endpoint (or any API) like this...
 
 ```html
 <script context="module">
-	/**
-	 * @type {import('@sveltejs/kit').Load}
-	 */
-	export async function load({ page, fetch, session, context }) {
+	export async function load({ page, fetch }) {
 		const url = `/blog/${page.params.slug}.json`;
 		const res = await fetch(url);
 
@@ -62,28 +29,32 @@ Our example blog page might contain a `load` function like the following:
 	}
 </script>
 ```
-> Note the `<script context="module">` — this is necessary because `load` runs before the component is rendered. Code that is per-component instance should go into a second `<script>` tag.  
 
-`load` is similar to `getStaticProps` or `getServerSideProps` in Next.js, except that it runs on both the server and the client.
+You might wonder why we use a `fetch` function in the argument. The `fetch` function is a custom wrapper around the native `fetch` Web API that allows SvelteKit to do some Svelte magic.
 
-If `load` returns nothing, SvelteKit will [fall through](#routing-advanced-fallthrough-routes) to other routes until something responds, or will respond with a generic 404.
+The `load` function runs both on the server during SSR and on the client during CSR. During SSR the responses to any `fetch` requests in `load` are saved in the generated page. After hydration on the client, the client-side runtime returns the saved responses to the `fetch` requests in the `load` function when it runs. On the client there is no network request. The only actual network request is on the server. To the component it only looks like the request happens on the client.
 
-SvelteKit's `load` receives an implemention of `fetch`, which has the following special properties:
-- it has access to cookies on the server
-- it can make requests against the app's own endpoints without issuing an HTTP call
-- it makes a copy of the response when you use it, and then sends it embedded in the initial page load for hydration
+When rendering the component on the client the data is always ready, no matter how long the fetch takes. This is because there is no fetch. The data is already there on the client because the fetch took place on the server earlier. To the client the response is always instant, even if the API is slow since the waiting is done on the server. And even better for prerendered pages since the waiting is done during build-time. The amount of fetch requests doesn't matter either since they are all included in the same generated page.
 
-`load` only applies to [page](#routing-pages) and [layout](#layouts) components (not components they import), and runs on both the server and in the browser with the default rendering options.
+??? During dynamic SSR, `fetch` on the server has access to cookies. This isn't applicable with prerendering.
 
-> Code called inside `load` blocks:
->
-> - should use the SvelteKit-provided [`fetch`](#loading-input-fetch) wrapper rather than using the native `fetch`
-> - should not reference `window`, `document`, or any browser-specific objects
-> - should not directly reference any API keys or secrets, which will be exposed to the client, but instead call an endpoint that uses any required secrets
+The `load` function and the custom `fetch` also allow to use endpoints that only exist on the server.
+
+> Don't use `load` directly to fetch data from APIs using private credentials or data on the server itself, since the code is leaked to the client. Instead use [endpoints](#routing-endpoints).
+
+The `load` function is the preferable way to fetch data since the `onMount` function runs only on the client meaning the client has to wait for the network.
+
+> Make sure to use the custom `fetch` wrapper instead of the global `fetch`. Otherwise fetching from endpoints will fail on the client, because they don't exist at a URL on the WWW. Also `fetch` would make a network request on the client, which the client had to wait for, just like in `onMount`. Of course, the request would also be sent on the server, and the response would be discarded without using it.
+
+> Since the `load` function runs on also on the server, make sure it doesn't use any browser-specific objects like `window` or `document`.
 
 It is recommended that you not store pre-request state in global variables, but instead use them only for cross-cutting concerns such as caching and holding database connections.
 
 > Mutating any shared state on the server will affect all clients, not just the current one.
+
+
+??? What happens if SSR is off?
+
 
 ### Input
 
@@ -104,9 +75,7 @@ So if the example above was `src/routes/blog/[slug].svelte` and the URL was `htt
 
 #### fetch
 
-`fetch` is equivalent to the native `fetch` web API, and can make credentialed requests. It can be used across both client and server contexts.
-
-> When `fetch` runs on the server, the resulting response will be serialized and inlined into the rendered HTML. This allows the subsequent client-side `load` to access identical data immediately without an additional network request.
+`fetch` is a wrapper around the native `fetch` web API, and can make credentialed requests. It can be used across both client and server contexts.
 
 > Cookies will only be passed through if the target host is the same as the SvelteKit application or a more specific subdomain of it.
 
@@ -120,7 +89,9 @@ So if the example above was `src/routes/blog/[slug].svelte` and the URL was `htt
 
 ### Output
 
-If you return a Promise from `load`, SvelteKit will delay rendering until the promise resolves. The return value has several properties, all optional:
+The return value is an object with several properties, all optional. A promise will be awaited and delay rendering until it resolves.
+
+If nothing is returned, SvelteKit will [fall through](#routing-advanced-fallthrough-routes) to other routes until it finds a `load` function that responds. If no route responds it will respond with a generic 404.
 
 #### status
 

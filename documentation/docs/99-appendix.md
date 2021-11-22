@@ -2,32 +2,54 @@
 title: Appendix
 --- 
 
-The core of SvelteKit provides a highly configurable rendering engine. This section describes some of the terms used when discussing rendering. A reference for setting these options is provided in the documentation above.
+This is a glossary of common terms used.
 
-### SSR
+### Server-side rendering (SSR)
 
-Server-side rendering (SSR) is the generation of the page contents on the server. SSR is generally preferred for SEO. While some search engines can index content that is dynamically generated on the client-side it may take longer even in these cases. It also tends to improve perceived performance and makes your app accessible to users if JavaScript fails or is disabled (which happens [more often than you probably think](https://kryogenix.org/code/browser/everyonehasjs.html)).
+Server-side rendering (SSR) is the generation of the page contents on the server. The content is contained in the HTML as markup and to show the page the browser can build the DOM directly from the markup. This is how all web pages worked initially. Don't get confused, the page can still contain JavaScript, and therefore personalise the contents on the client-side.
 
-### CSR and SPA
+For the initial page load, SSR improves performance since it can show content faster. Also it makes the page accessible to users without JavaScript, which can fail or be disabled [more often than you might think](https://kryogenix.org/code/browser/everyonehasjs.html). Because of this SSR is generally preferred for SEO. While some search engines can index content that is dynamically generated on the client-side (see CSR) it may take longer even in these cases.
 
-Client-side rendering (CSR) is the generation of the page contents in the web browser using JavaScript. A single-page app (SPA) is an application in which all requests to the server load a single HTML file which then does client-side rendering of the requested contents based on the requested URL. All navigation is handled on the client-side in a process called client-side routing with per-page contents being updated and common layout elements remaining largely unchanged. SPAs do not provide SSR, which has the shortcoming described above. However, some applications are not greatly impacted by these shortcomings such as a complex business application behind a login where SEO would not be important and it is known that users will be accessing the application from a consistent computing environment.
+#### Dynamic SSR
 
-### Prerendering
+Dynamic SSR is the generation of a server-side rendered page at request-time. Such a web page is often also called a dynamic web page, although the term may be confusing because client-side JavaScript can make it appear dynamic as well.
 
-Prerendering means computing the contents of a page at build time and saving the HTML for display. This approach has the same benefits as traditional server-rendered pages, but avoids recomputing the page for each visitor and so scales nearly for free as the number of visitors increases. The tradeoff is that the build process is more expensive and prerendered content can only be updated by building and deploying a new version of the application.
+Dynamic SSR can make sense for pages that need to personalise the contents of the page on the server for different requests, and can't use JavaScript on the client.
 
-Not all pages can be prerendered. The basic rule is this: for content to be prerenderable, any two users hitting it directly must get the same content from the server. Note that you can still prerender content that is loaded based on the page's parameters as long as all users will be seeing the same prerendered content.
+Dynamic SSR can make sense for certain types of web sites, where pages can't be prerendered. For example, if pages change too quickly like on social networks or news sites, or if pages are simply too many to store like in encyclopedias. But in most cases even those sites can have certain pages prerendered that change less often, making it valuable to be able to specify prerendering on a page-to-page basis.
 
-Pre-rendered pages are not limited to static content. You can build personalized pages if user-specific data is fetched and rendered client-side. This is subject to the caveat that you will experience the downsides of not doing SSR for that content as discussed above.
+#### Prerendering
 
-### SSG
+Prerendering is the generation of a server-side rendered page at build-time. Such a web page is often also called a static web page, although the term may be confusing because client-side JavaScript can make it appear dynamic. Web sites with only prerendered pages are called static sites. The tool for generating a static site is called a Static Site Generator (SSG).
 
-Static Site Generation (SSG) is a term that refers to a site where every page is prerendered. This is what SvelteKit's `adapter-static` does. SvelteKit was not built to do only static site generation like some tools and so may not scale as well to efficiently render a very large number of pages as tools built specifically for that purpose. However, in contrast to most purpose-built SSGs, SvelteKit does nicely allow for mixing and matching different rendering types on different pages. One benefit of fully prerendering a site is that you do not need to maintain or pay for servers to perform SSR. Once generated, the site can be served from CDNs, leading to great "time to first byte" performance. This delivery model is often referred to as JAMstack.
+Prerendering is more performant and efficient than Dynamic SSR, since it scales independently of the number of requests. Hosting for static sites is as simple as it gets and many static site hosts offer it even for free. This delivery model is often referred to as JAMstack.
 
-### Hydration
+As a tradeoff, prerendering allows for less frequent updates to the page and also requires more storage.
 
-Svelte components store some state and update the DOM when the state is updated. When fetching data during SSR, by default SvelteKit will store this data and transmit it to the client along with the server-rendered HTML. The components can then be initialized on the client with that data without having to call the same API endpoints again. Svelte will then check that the DOM is in the expected state and attach event listeners in a process called hydration. Once the components are fully hydrated, they can react to changes to their properties just like any newly created Svelte component.
+Prerendered pages can't personalise the response depending on the request, for example involving session or authentication. If you want to personalise the contents of the page, you can either use a prerendered page with JavaScript personalising the contents on the client-side, or use dynamic SSR instead.
+
+### Client-side rendering (CSR)
+
+Client-side rendering (CSR) is the generation of the page contents on the client. The content is contained in the HTML as JavaScript instead of as markup and to show the page the browser needs to execute the JavaScript to build the DOM.
+
+For the initial page load, CSR is slower than SSR because of the additional size of the supporting JavaScript engine and the time needed to execute it. However, for subsequent pages it can be more efficient if used together with client-side routing (see Routing).
 
 ### Routing
 
-By default, when you navigate to a new page (by clicking on a link or using the browser's forward or back buttons), SvelteKit will intercept the attempted navigation and handle it instead of allowing the browser to send a request to the server for the destination page. SvelteKit will then update the displayed contents on the client by rendering the component for the new page, which in turn can make calls to the necessary API endpoints. This process of updating the page on the client in response to attempted navigation is called client-side routing.
+Routing is the navigation of the client to a new page (of the same website).
+
+Server-side routing uses the built-in browser navigation. The browser loads the new page as initial page, as if the previous page had never been there. No state is preserved and the DOM is built again from scratch. This is how navigation clasically works in SSR pages. The drawback is, that this is slow and inefficient. The advantage is that it doesn't require JavaScript and works out of the box. This isn't only important for the built-in navigation elements like the anchor element or the forward and back buttons and the history, but also accessibility like moving focus back to the top of the page or reading the new title.
+
+Client-side routing uses JavaScript for navigation. JavaScript loads the new contents and modifies the DOM of the existing page. To the browser it seems like there is only ever the single initial page. JavaScript just manipulates that single page to make it look like distinct pages.
+
+For subsequent navigation, this is more efficient since it only needs to load the changed contents without the page boilerplate. It can also preserve state, prefetch pages in advance, and animate page transitions. The navigation can be initiated by JavaScript, or by the user interacting with the built-in browser navigation elements which JavaScript needs to intercept. JavaScript also needs to change the URL in the browser bar, update the browser history, and preserve accessibility. Client-side routing requires CSR and therefore CSR is almost always used together with client-side routing.
+
+### SPA
+
+A Single-Page App (SPA) is a web site that uses client-side routing without SSR the initial page. Initially, frameworks didn't include support for SSR but nowadays most frameworks have good support for SSR.
+
+There are certain cases in which a SPA still makes sense where the tradeoff of simplicity against performance and efficiency is worth it, like a complex business application behind a login where SEO isn't important and users are accessing the application from a consistent computing environment.
+
+### Hydration
+
+Hydration is the process of making a server-side rendered version of a page interactive. The client-side runtime attaches event listeners, (if client-side routing) initialises the client-side router, and uses CSR to update the page for any state change.

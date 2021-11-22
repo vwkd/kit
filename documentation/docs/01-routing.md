@@ -2,21 +2,19 @@
 title: Routing
 ---
 
-At the heart of SvelteKit is a _filesystem-based router_. This means that the structure of your application is defined by the structure of your codebase — specifically, the contents of `src/routes`.
-
-> You can change this to a different directory by editing the [project config](#configuration).
-
-There are two types of route — **pages** and **endpoints**.
-
-Pages typically generate HTML to display to the user (as well as any CSS and JavaScript needed for the page). By default, pages are rendered on both the client and server, though this behaviour is configurable.
-
-Endpoints run only on the server (or when you build your site, if [prerendering](#ssr-and-javascript-prerender)). This means it's the place to do things like access databases or APIs that require private credentials or return data that lives on a machine in your production network. Pages can request data from endpoints. Endpoints return JSON by default, though may also return data in other formats.
+There are two types of routes: **pages** and **endpoints**.
 
 ### Pages
 
-Pages are Svelte components written in `.svelte` files (or any file with an extension listed in [`config.extensions`](#configuration)). By default, when a user first visits the application, they will be served a server-rendered version of the page in question, plus some JavaScript that 'hydrates' the page and initialises a client-side router. From that point forward, navigating to other pages is handled entirely on the client for a fast, app-like feel where the common portions in the layout do not need to be rerendered.
+Pages are rendered on both the client and server by default. During SSR a page generates a HTML file as well as any CSS and JavaScript dependencies. When deployed these files will end up at URLs on the WWW for your clients to reach. On the client, the page is hydrated and CSR.
 
-The filename determines the route. For example, `src/routes/index.svelte` is the root of your site:
+??? During CSR it generates JSON.
+
+Pages are Svelte components with a `.svelte.` extension in the `src/routes` directory of your project. You can customise the extension and the directory in the [config](#configuration).
+
+The filename of a page determines the route. This means that the structure of your application is defined by the structure of your codebase — specifically, the contents of `src/routes`.
+
+For example, `src/routes/index.svelte` is the root of your site:
 
 ```html
 <!-- src/routes/index.svelte -->
@@ -24,7 +22,7 @@ The filename determines the route. For example, `src/routes/index.svelte` is the
 	<title>Welcome</title>
 </svelte:head>
 
-<h1>Hello and welcome to my site!</h1>
+<h1>Hello world!</h1>
 ```
 
 A file called either `src/routes/about.svelte` or `src/routes/about/index.svelte` would correspond to the `/about` route:
@@ -39,55 +37,31 @@ A file called either `src/routes/about.svelte` or `src/routes/about/index.svelte
 <p>TODO...</p>
 ```
 
-Dynamic parameters are encoded using `[brackets]`. For example, a blog post might be defined by `src/routes/blog/[slug].svelte`. Soon, we'll see how to access that parameter in a [load function](#loading) or the [page store](#modules-$app-stores).
+Dynamic parameters are encoded using `[brackets]`. For example, a blog post might be defined by `src/routes/blog/[slug].svelte`. Soon, we'll see how to use that parameter in a [`load` function](#loading) or the [page store](#modules-$app-stores).
 
-A file or directory can have multiple dynamic parts, like `[id]-[category].svelte`. (Parameters are 'non-greedy'; in an ambiguous case like `x-y-z`, `id` would be `x` and `category` would be `y-z`.)
+A file or directory can have multiple dynamic parts, like `[id]-[category].svelte`. Parameters are 'non-greedy'. In an ambiguous case like `x-y-z`, `id` would be `x` and `category` would be `y-z`.
 
 ### Endpoints
 
-Endpoints are modules written in `.js` (or `.ts`) files that export functions corresponding to HTTP methods.
+Endpoints can be accessed from a page using the custom `fetch` wrapper in the [`load`](#loading) function. Endpoints run only during SSR on the server. An endpoint isn't deployed to a URL on the WWW.
 
-```ts
-// Endpoint TypeScript type definitions
+Endpoints can be used to provide data from APIs that require private credentials or data on the server itself like databases.
 
-type Headers = Record<string, string>;
-type DefaultBody = JSONValue | Uint8Array;
+During SSR the response to a fetch from the endpoint is saved into the generated page. The runtime on the client then emulates the response to the page as if the resource actually existed at the URL on the WWW. For more details, see [`load`](#loading) function.
 
-type Request<Locals = Record<string, any>, Body = unknown> = {
-	method: string;
-	host: string;
-	headers: Headers;
-	path: string;
-	params: Record<string, string>;
-	query: URLSearchParams;
-	rawBody: string | Uint8Array;
-	body: ParameterizedBody<Body>;
-	locals: Locals; // populated by hooks handle
-};
+Endpoints return JSON by default, though may also return data in other formats.
 
-type EndpointOutput<Body extends DefaultBody = DefaultBody> = {
-	status?: number;
-	headers?: Headers;
-	body?: Body;
-};
+??? What happens if SSR is off?
 
-type RequestHandler<
-	Locals = Record<string, any>,
-	Input = unknown,
-	Output extends DefaultBody = DefaultBody
-> = (
-	request: Request<Locals, Input>
-) => void | EndpointOutput<Output> | Promise<void | EndpointOutput<Output>>;
-```
+Endpoints are modules with a `.js` or `.ts` extension and filenames similar to pages. A module exports functions corresponding to HTTP methods, like `get` for `GET` requests and `post` for `POST` requests. Since `delete` is a reserved word in JavaScript, DELETE requests are handled with a `del` function. 
 
- For example, our hypothetical blog page, `/blog/cool-article`, might request data from `/blog/cool-article.json`, which could be represented by a `src/routes/blog/[slug].json.js` endpoint:
+Endpoints return JSON by default, though may also return data in other formats.
+
+For example, we might have a hypothetical database with blog posts on our server at `$lib/database`. Don't worry about `$lib`, we'll get to that [later](#modules-$lib). We use the endpoint `src/routes/blog/[slug].json.js` to get a blog post from our database. Then a hypothetical blog page like `/blog/cool-article` would request data from `/blog/cool-article.json`, which would call the endpoint with the slug `cool-article` and search in the database for a corresponding blog post.
 
 ```js
 import db from '$lib/database';
 
-/**
- * @type {import('@sveltejs/kit').RequestHandler}
- */
 export async function get({ params }) {
 	// the `slug` parameter is available because this file
 	// is called [slug].json.js
@@ -105,30 +79,19 @@ export async function get({ params }) {
 }
 ```
 
-> All server-side code, including endpoints, has access to `fetch` in case you need to request data from external APIs.
+Note we don't interact with the `req` and `res` objects you might be familiar with from Node's `http` module or frameworks like Express, because they're only available on certain platforms. SvelteKit uses its own API such that it can adapt to any platform using [adapters](#adapters).
 
-The job of this function is to return a `{ status, headers, body }` object representing the response, where `status` is an [HTTP status code](https://httpstatusdogs.com):
+Note that in endpoints a global `fetch` is available that can be used to fetch data from external APIs irrespective of the platform.
 
-- `2xx` — successful response (default is `200`)
-- `3xx` — redirection (should be accompanied by a `location` header)
-- `4xx` — client error
-- `5xx` — server error
+#### Response
 
-> For successful responses, SvelteKit will generate 304s automatically.
+The job of an endpoint function is to return a `{ status, headers, body }` object representing the response.
 
-If the returned `body` is an object, and no `content-type` header is returned, it will automatically be turned into a JSON response. (Don't worry about `$lib`, we'll get to that [later](#modules-$lib).)
+The property `status` is an [HTTP status code](https://httpstatusdogs.com) which defaults to `200`. Returning nothing is equivalent to an explicit 404 response.
 
-> Returning nothing is equivalent to an explicit 404 response.
+???? For successful responses, SvelteKit will generate 304s automatically.
 
-For endpoints that handle other HTTP methods, like POST, export the corresponding function:
-
-```js
-export function post(request) {...}
-```
-
-Since `delete` is a reserved word in JavaScript, DELETE requests are handled with a `del` function.
-
-> We don't interact with the `req`/`res` objects you might be familiar with from Node's `http` module or frameworks like Express, because they're only available on certain platforms. Instead, SvelteKit translates the returned object into whatever's required by the platform you're deploying your app to.
+If the returned `body` is an object, and no `content-type` header is returned, it will automatically be turned into a JSON response.
 
 To set multiple cookies in a single set of response headers, you can return an array:
 
@@ -148,7 +111,7 @@ The `body` property of the request object will be provided in the case of POST r
 - Form data (with content-type `application/x-www-form-urlencoded` or `multipart/form-data`) will be parsed to a read-only version of the [`FormData`](https://developer.mozilla.org/en-US/docs/Web/API/FormData) object.
 - All other data will be provided as a `Uint8Array`
 
-### Private modules
+### Private routes
 
 A filename that has a segment with a leading underscore, such as `src/routes/foo/_Private.svelte` or `src/routes/bar/_utils/cool-util.js`, is hidden from the router, but can be imported by files that are not.
 
